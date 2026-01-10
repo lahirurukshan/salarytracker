@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Salary Tracker – Dashboard</title>
+  <style>
+    :root {
+      --bg1: #e6f0ff;
+      --bg2: #f7fbff;
+      --glass: rgba(255,255,255,0.75);
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --accent: #007aff;
+      --danger: #ff3b30;
+      --success: #34c759;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      color: var(--text);
+    }
+
+    .dashboard {
+      width: 100%;
+      max-width: 1200px;
+      aspect-ratio: 16 / 9;
+      background: rgba(255,255,255,0.4);
+      backdrop-filter: blur(18px);
+      border-radius: 24px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 20px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 { margin: 0; font-size: 28px; }
+    .subtitle { color: var(--muted); font-size: 14px; }
+
+    .card {
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 12px 25px rgba(0,0,0,0.08);
+    }
+
+    .balance {
+      font-size: 36px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .income { color: var(--success); }
+    .expense { color: var(--danger); }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    ul { list-style: none; padding: 0; margin: 0; }
+    li {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      font-size: 13px;
+    }
+
+    .tag { font-size: 11px; color: var(--muted); }
+
+    .summary-cards {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .summary-box {
+      flex: 1;
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    .summary-box .label { font-size: 13px; color: var(--muted); }
+    .summary-box .value { font-size: 20px; font-weight: 600; margin-top: 6px; }
+
+    @media (max-width: 900px) {
+      .dashboard {
+        aspect-ratio: auto;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+      }
+      .summary-cards { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  <header>
+    <div>
+      <h1>Salary Dashboard</h1>
+      <div class="subtitle">Lahiru Rukshan's Monthly Salary Updates</div>
+    </div>
+  </header>
+
+  <div class="card">
+    <div>This Month Balance</div>
+    <div class="balance" id="balance">Rs. 0</div>
+    <div class="row">
+      <span class="income">Salary: Rs. <span id="salary">0</span></span>
+      <span class="expense">Spent: Rs. <span id="spent">0</span></span>
+    </div>
+
+    <input type="number" id="salaryInput" placeholder="Monthly Salary (Rs.)" />
+    <button onclick="setSalary()">Update Salary</button>
+
+    <hr style="margin:16px 0; border:none; border-top:1px solid #eee;" />
+
+    <input type="number" id="amount" placeholder="Expense Amount (Rs.)" />
+    <input type="text" id="title" placeholder="Title (Food, Rent, Net...)" />
+    <select id="category">
+      <option>Food</option>
+      <option>Travel</option>
+      <option>Bills</option>
+      <option>Shopping</option>
+      <option>Other</option>
+    </select>
+    <button onclick="addExpense()">Add Expense</button>
+  </div>
+
+  <div class="card summary-cards">
+    <div class="summary-box">
+      <div class="label">Salary</div>
+      <div class="value income" id="summarySalary">Rs. 0</div>
+    </div>
+    <div class="summary-box">
+      <div class="label">Spent</div>
+      <div class="value expense" id="summarySpent">Rs. 0</div>
+    </div>
+    <div class="summary-box">
+      <div class="label">Left</div>
+      <div class="value success" id="summaryLeft">Rs. 0</div>
+    </div>
+  </div>
+
+  <div class="card" style="grid-column:1/-1;">
+    <h3>Expense History</h3>
+    <ul id="list"></ul>
+  </div>
+</div>
+
+<script>
+  let data = JSON.parse(localStorage.getItem('salaryTracker')) || { salary: 0, spent: 0, expenses: [] };
+
+  const balanceEl = document.getElementById('balance');
+  const salaryEl = document.getElementById('salary');
+  const spentEl = document.getElementById('spent');
+  const summarySalary = document.getElementById('summarySalary');
+  const summarySpent = document.getElementById('summarySpent');
+  const summaryLeft = document.getElementById('summaryLeft');
+  const list = document.getElementById('list');
+
+  function save() {
+    localStorage.setItem('salaryTracker', JSON.stringify(data));
+  }
+
+  function formatNumber(num) {
+    return num.toLocaleString();
+  }
+
+  function render() {
+    salaryEl.textContent = formatNumber(data.salary);
+    spentEl.textContent = formatNumber(data.spent);
+    balanceEl.textContent = `Rs. ${formatNumber(data.salary - data.spent)}`;
+
+    summarySalary.textContent = `Rs. ${formatNumber(data.salary)}`;
+    summarySpent.textContent = `Rs. ${formatNumber(data.spent)}`;
+    summaryLeft.textContent = `Rs. ${formatNumber(data.salary - data.spent)}`;
+
+    list.innerHTML = '';
+    data.expenses.forEach(e => {
+      const li = document.createElement('li');
+      li.innerHTML = `<div><strong>${e.title}</strong><div class="tag">${e.category} • ${e.date}</div></div><span class="expense">- Rs. ${formatNumber(e.amount)}</span>`;
+      list.prepend(li);
+    });
+  }
+
+  function setSalary() {
+    const val = Number(document.getElementById('salaryInput').value);
+    if (!val) return;
+    data.salary = val;
+    save(); render();
+  }
+
+  function addExpense() {
+    const amount = Number(document.getElementById('amount').value);
+    const title = document.getElementById('title').value;
+    const category = document.getElementById('category').value;
+    if (!amount || !title) return;
+
+    data.spent += amount;
+    data.expenses.push({ amount, title, category, date: new Date().toLocaleDateString() });
+
+    save(); render();
+
+    document.getElementById('amount').value = '';
+    document.getElementById('title').value = '';
+  }
+
+  render();
+</script>
+</body>
+</html>
